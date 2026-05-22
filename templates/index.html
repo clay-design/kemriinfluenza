@@ -1,0 +1,2030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KEMRI-CGHR Influenza System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+<div id="authPage" class="min-h-screen flex items-center justify-center p-4">
+  <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8">
+    <div class="text-center mb-8">
+      <h1 class="text-4xl font-black text-blue-900">KEMRI-CGHR</h1>
+      <p class="text-gray-600 mt-2">Influenza Program Data Collection</p>
+    </div>
+
+    <div class="flex mb-6 border-b border-slate-200">
+      <button id="tab-login" onclick="showAuthTab('login')" class="flex-1 py-3 text-lg font-semibold border-b-2 border-blue-900">Login</button>
+      <button id="tab-register" onclick="showAuthTab('register')" class="flex-1 py-3 text-lg font-semibold text-slate-500">Register</button>
+      <button id="tab-reset" onclick="showAuthTab('reset')" class="flex-1 py-3 text-lg font-semibold text-slate-500">Reset Password</button>
+    </div>
+
+    <div id="loginForm">
+      <label class="block text-sm font-medium text-slate-700">Username</label>
+      <input id="l_username" class="w-full p-4 mt-2 border rounded-2xl mb-4" placeholder="Username" autocomplete="username">
+      <label class="block text-sm font-medium text-slate-700">Password</label>
+      <input id="l_password" type="password" class="w-full p-4 mt-2 border rounded-2xl mb-4" placeholder="Password" autocomplete="current-password">
+      <button onclick="login()" class="w-full bg-blue-900 hover:bg-blue-800 text-white py-4 rounded-2xl font-bold">LOGIN</button>
+      <p class="mt-4 text-sm text-slate-600">
+        <button type="button" onclick="showAuthTab('reset')" class="font-semibold text-blue-900 hover:underline">Forgot your password?</button>
+      </p>
+      <p id="authMessage" class="mt-3 text-sm text-red-600"></p>
+    </div>
+
+    <div id="registerForm" class="hidden">
+      <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-6">
+        <p class="text-sm text-blue-900 font-semibold mb-2"><i class="fas fa-shield-alt"></i> Registration Guide</p>
+        <ul class="text-xs text-blue-800 space-y-1">
+          <li><strong>Field Technician:</strong> Self-register anytime. View data only.</li>
+          <li><strong>Data Manager (1st):</strong> No login needed. Create the first account.</li>
+          <li><strong>Data Manager (after 1st):</strong> Login as existing manager to create new ones.</li>
+        </ul>
+      </div>
+      <label class="block text-sm font-medium text-slate-700">Full Name</label>
+      <input id="r_fullname" class="w-full p-4 mt-2 border rounded-2xl mb-3" placeholder="Full Name">
+      <label class="block text-sm font-medium text-slate-700">Username</label>
+      <input id="r_username" class="w-full p-4 mt-2 border rounded-2xl mb-3" placeholder="Username">
+      <label class="block text-sm font-medium text-slate-700">Password</label>
+      <input id="r_password" type="password" class="w-full p-4 mt-2 border rounded-2xl mb-6" placeholder="Password">
+      <label class="block text-sm font-medium text-slate-700">Role</label>
+      <select id="r_role" class="w-full p-4 mt-2 border rounded-2xl mb-6">
+        <option>Field Technician</option>
+        <option>Data Manager</option>
+      </select>
+      <button onclick="register()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-bold">CREATE ACCOUNT</button>
+      <p id="registerMessage" class="mt-4 text-sm text-red-600"></p>
+    </div>
+
+    <div id="resetForm" class="hidden">
+      <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-6">
+        <p class="text-sm text-blue-900 font-semibold mb-2"><i class="fas fa-key"></i> Change Password</p>
+        <p class="text-xs text-blue-800">Enter your username, current password, and a new password to update your login credentials.</p>
+      </div>
+      <label class="block text-sm font-medium text-slate-700">Username</label>
+      <input id="rp_username" class="w-full p-4 mt-2 border rounded-2xl mb-3" placeholder="Username" autocomplete="username">
+      <label class="block text-sm font-medium text-slate-700">Current Password</label>
+      <input id="rp_old_password" type="password" class="w-full p-4 mt-2 border rounded-2xl mb-3" placeholder="Current Password" autocomplete="current-password">
+      <label class="block text-sm font-medium text-slate-700">New Password</label>
+      <input id="rp_password" type="password" class="w-full p-4 mt-2 border rounded-2xl mb-3" placeholder="New Password" autocomplete="new-password">
+      <label class="block text-sm font-medium text-slate-700">Confirm New Password</label>
+      <input id="rp_password_confirm" type="password" class="w-full p-4 mt-2 border rounded-2xl mb-6" placeholder="Confirm New Password" autocomplete="new-password">
+      <button onclick="resetPassword()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-4 rounded-2xl font-bold">CHANGE PASSWORD</button>
+      <p id="resetMessage" class="mt-4 text-sm text-red-600"></p>
+    </div>
+  </div>
+</div>
+
+<div id="mainApp" class="hidden min-h-screen bg-slate-50">
+  <nav class="bg-blue-900 text-white py-5 shadow-sm">
+    <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div>
+        <h1 class="text-3xl font-bold">KEMRI-CGHR Influenza System</h1>
+        <p class="text-slate-100 mt-1">Secure data collection with workflow enforcement</p>
+      </div>
+      <div class="flex flex-col sm:flex-row items-center gap-3">
+        <span id="userBadge" class="bg-white text-blue-900 px-4 py-2 rounded-full font-semibold"></span>
+        <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-5 py-2 rounded-2xl font-semibold">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto p-6">
+    <section class="grid gap-6 mb-8 lg:grid-cols-2">
+      <div class="bg-white rounded-3xl shadow p-6">
+        <h2 class="text-2xl font-bold mb-4">Workflow Summary</h2>
+        <div id="stats" class="grid grid-cols-2 gap-4"></div>
+      </div>
+      <div class="bg-white rounded-3xl shadow p-6">
+        <h2 class="text-2xl font-bold mb-4">Site Summary</h2>
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-left text-sm">
+            <thead>
+              <tr class="text-slate-600 uppercase text-xs tracking-wider border-b border-slate-200">
+                <th class="py-3 px-2">Site</th>
+                <th class="py-3 px-2">Screened</th>
+                <th class="py-3 px-2">Enrolled</th>
+                <th class="py-3 px-2">Delivered</th>
+                <th class="py-3 px-2">Closed</th>
+              </tr>
+            </thead>
+            <tbody id="siteSummary" class="text-slate-700"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid grid-cols-1 gap-4 lg:grid-cols-4 mb-8">
+      <button onclick="loadSection('dashboard')" class="bg-white p-6 rounded-3xl shadow hover:shadow-lg text-left">Dashboard</button>
+      <button onclick="loadSection('screening')" class="bg-white p-6 rounded-3xl shadow hover:shadow-lg text-left">Screening</button>
+      <button onclick="loadSection('enrolment')" class="bg-white p-6 rounded-3xl shadow hover:shadow-lg text-left">Enrolment</button>
+      <button onclick="loadSection('delivery')" class="bg-white p-6 rounded-3xl shadow hover:shadow-lg text-left">Delivery</button>
+      <button onclick="loadSection('closeout')" class="bg-white p-6 rounded-3xl shadow hover:shadow-lg text-left">Closeout</button>
+      <button onclick="loadSection('records')" class="bg-white p-6 rounded-3xl shadow hover:shadow-lg text-left">Records</button>
+      <button id="adminPageButton" onclick="loadSection('admin')" class="hidden bg-white p-6 rounded-3xl shadow hover:shadow-lg text-left">User Admin</button>
+    </section>
+
+    <section id="contentArea"></section>
+  </main>
+</div>
+
+<script>
+const currentUser = { role: null, initials: null, username: null };
+const facilityOptions = ['Bondo', 'Siaya', 'Kuoyo', 'Lumumba'];
+
+function showAuthTab(tab) {
+  document.getElementById('authMessage').textContent = '';
+  document.getElementById('registerMessage').textContent = '';
+  document.getElementById('resetMessage').textContent = '';
+  document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
+  document.getElementById('registerForm').classList.toggle('hidden', tab !== 'register');
+  document.getElementById('resetForm').classList.toggle('hidden', tab !== 'reset');
+  document.getElementById('tab-login').classList.toggle('text-slate-500', tab !== 'login');
+  document.getElementById('tab-register').classList.toggle('text-slate-500', tab !== 'register');
+  document.getElementById('tab-reset').classList.toggle('text-slate-500', tab !== 'reset');
+}
+
+async function login() {
+  const username = document.getElementById('l_username').value.trim();
+  const password = document.getElementById('l_password').value;
+  const msg = document.getElementById('authMessage');
+  msg.textContent = '';
+
+  const response = await fetch('/api/login', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ username, password })
+  });
+  const result = await response.json();
+  if (!result.success) {
+    msg.textContent = result.message || 'Login failed';
+    return;
+  }
+  currentUser.role = result.user.role;
+  currentUser.initials = result.user.initials;
+  currentUser.username = result.user.username;
+  showMainApp(result.user);
+}
+
+async function register() {
+  const fullname = document.getElementById('r_fullname').value.trim();
+  const username = document.getElementById('r_username').value.trim();
+  const password = document.getElementById('r_password').value;
+  const role = document.getElementById('r_role').value;
+  const msg = document.getElementById('registerMessage');
+  msg.textContent = '';
+
+  if (!fullname || !username || !password) {
+    msg.textContent = 'Please fill in all fields.';
+    return;
+  }
+
+  const response = await fetch('/api/register', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ full_name: fullname, username, password, role })
+  });
+  const result = await response.json();
+  if (!result.success) {
+    msg.textContent = result.message || 'Unable to create account';
+    return;
+  }
+  msg.classList.remove('text-red-600');
+  msg.classList.add('text-emerald-600');
+  msg.textContent = `${role} account created successfully. Please login.`;
+  document.getElementById('r_fullname').value = '';
+  document.getElementById('r_username').value = '';
+  document.getElementById('r_password').value = '';
+}
+
+async function resetPassword() {
+  const username = document.getElementById('rp_username').value.trim();
+  const password = document.getElementById('rp_password').value;
+  const confirm = document.getElementById('rp_password_confirm').value;
+  const msg = document.getElementById('resetMessage');
+  msg.textContent = '';
+
+  const oldPassword = document.getElementById('rp_old_password').value;
+  if (!username || !oldPassword || !password || !confirm) {
+    msg.textContent = 'Please fill in all fields to change your password.';
+    return;
+  }
+  if (password !== confirm) {
+    msg.textContent = 'Passwords do not match.';
+    return;
+  }
+
+  const response = await fetch('/api/reset-password', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ username, old_password: oldPassword, new_password: password })
+  });
+  const result = await response.json();
+  if (!result.success) {
+    msg.textContent = result.message || 'Password reset failed';
+    return;
+  }
+
+  msg.classList.remove('text-red-600');
+  msg.classList.add('text-emerald-600');
+  msg.textContent = result.message || 'Password changed successfully. Please login.';
+  document.getElementById('rp_username').value = '';
+  document.getElementById('rp_old_password').value = '';
+  document.getElementById('rp_password').value = '';
+  document.getElementById('rp_password_confirm').value = '';
+}
+
+
+async function logout() {
+  await fetch('/api/logout', { method: 'POST' });
+  currentUser.role = null;
+  currentUser.initials = null;
+  currentUser.username = null;
+  document.getElementById('mainApp').classList.add('hidden');
+  document.getElementById('authPage').classList.remove('hidden');
+  document.getElementById('l_username').value = '';
+  document.getElementById('l_password').value = '';
+}
+
+function showMainApp(user) {
+  document.getElementById('authPage').classList.add('hidden');
+  document.getElementById('mainApp').classList.remove('hidden');
+  document.getElementById('userBadge').textContent = `${user.initials} • ${user.role}`;
+  document.getElementById('adminPageButton').classList.toggle('hidden', user.role !== 'Data Manager');
+  currentUser.role = user.role;
+  currentUser.initials = user.initials;
+  currentUser.username = user.username;
+  loadDashboard();
+  loadSection('dashboard');
+}
+
+async function prepareScreeningId() {
+  const ids = await getAllScreeningIds();
+  const nextId = generateNextScreeningId(ids);
+  const input = document.getElementById('screening_id');
+  if (input && (!input.value || input.value.startsWith('SCR-') || input.value.startsWith('S-') || input.value.trim() === '')) {
+    input.value = nextId;
+  }
+}
+
+async function getAllScreeningIds() {
+  const response = await fetch('/api/screenings');
+  if (!response.ok) return [];
+  const data = await response.json();
+  return data.map(row => row.screening_id || '');
+}
+
+function generateNextScreeningId(existingIds) {
+  const prefix = 'SCR-';
+  let maxNumber = 0;
+  existingIds.forEach(id => {
+    const match = id.match(/^(?:SCR[-_]?)0*(\d+)$/i);
+    if (match) {
+      const num = Number(match[1]);
+      if (!Number.isNaN(num) && num > maxNumber) {
+        maxNumber = num;
+      }
+    }
+  });
+  return `${prefix}${String(maxNumber + 1).padStart(4, '0')}`;
+}
+
+function saveLastScreeningId(id) {
+  if (!id) return;
+  window.localStorage.setItem('lastScreeningId', id);
+}
+
+function getLastScreeningId() {
+  return window.localStorage.getItem('lastScreeningId');
+}
+
+function saveSelectedScreeningId(id) {
+  if (!id) return;
+  saveLastScreeningId(id);
+}
+
+function resetFormFields(fieldIds) {
+  fieldIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.tagName === 'SELECT') {
+      el.selectedIndex = 0;
+    } else {
+      el.value = '';
+    }
+  });
+}
+
+function getDraftKey(form, screeningId) {
+  const safeId = screeningId ? screeningId.replace(/[^a-zA-Z0-9_-]/g, '_') : 'none';
+  return `draft_${form}_${safeId}`;
+}
+
+async function saveFormDraft(form, fieldIds, screeningId) {
+  if (!fieldIds || !fieldIds.length) return;
+  const draft = {};
+  fieldIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      draft[id] = el.value;
+    }
+  });
+
+  const draftKey = getDraftKey(form, screeningId);
+  window.localStorage.setItem(draftKey, JSON.stringify(draft));
+
+  if (!screeningId) return;
+  try {
+    await fetch(`/api/drafts/${encodeURIComponent(form)}/${encodeURIComponent(screeningId)}`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(draft)
+    });
+  } catch (error) {
+    console.warn('Failed to save draft to server for', form, screeningId, error);
+  }
+}
+
+async function loadFormDraft(form, fieldIds, screeningId) {
+  let draft = null;
+  if (screeningId) {
+    try {
+      const response = await fetch(`/api/drafts/${encodeURIComponent(form)}/${encodeURIComponent(screeningId)}`);
+      if (response.ok) {
+        const serverDraft = await response.json();
+        if (serverDraft && Object.keys(serverDraft).length) {
+          draft = serverDraft;
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load server draft for', form, screeningId, error);
+    }
+  }
+
+  if (!draft) {
+    const raw = window.localStorage.getItem(getDraftKey(form, screeningId));
+    if (raw) {
+      try {
+        draft = JSON.parse(raw);
+      } catch (error) {
+        console.warn('Unable to parse local draft for', form, screeningId, error);
+      }
+    }
+  }
+
+  if (!draft) return;
+  fieldIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && draft[id] !== undefined) {
+      el.value = draft[id];
+    }
+  });
+}
+
+async function clearFormDraft(form, screeningId) {
+  const draftKey = getDraftKey(form, screeningId);
+  window.localStorage.removeItem(draftKey);
+  if (!screeningId) return;
+  try {
+    await fetch(`/api/drafts/${encodeURIComponent(form)}/${encodeURIComponent(screeningId)}`, {
+      method: 'DELETE'
+    });
+  } catch (error) {
+    console.warn('Failed to clear server draft for', form, screeningId, error);
+  }
+}
+
+function attachFormDraftListeners(form, fieldIds, screenIdFn) {
+  fieldIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    ['input', 'change'].forEach(eventType => {
+      el.addEventListener(eventType, () => {
+        saveFormDraft(form, fieldIds, screenIdFn());
+      });
+    });
+  });
+}
+
+async function maybeAutoSelectScreeningId(selectId) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+  const lastId = getLastScreeningId();
+  if (lastId && Array.from(select.options).some(opt => opt.value === lastId)) {
+    select.value = lastId;
+  }
+}
+
+async function autofillEnrolmentFromSelectedScreening() {
+  const select = document.getElementById('enrolment_screening_id');
+  if (!select) return;
+  const screeningId = select.value;
+  if (!screeningId) return;
+  saveLastScreeningId(screeningId);
+
+  const fieldIds = [
+    'enrolment_facility', 'enrolment_dob', 'enrolment_age_years', 'enrolment_age_months',
+    'enrolment_marital_status', 'enrolment_husband_name', 'enrolment_village', 'enrolment_education',
+    'enrolment_occupation', 'enrolment_height', 'enrolment_weight', 'enrolment_temperature',
+    'enrolment_temp_method', 'enrolment_resp_rate', 'enrolment_pulse_rate', 'enrolment_bp', 'enrolment_estimated_ga'
+  ];
+  resetFormFields(fieldIds);
+
+  const response = await fetch(`/api/screening/${encodeURIComponent(screeningId)}`);
+  if (!response.ok) return;
+  const screening = await response.json();
+  if (!screening) return;
+
+  if (screening.facility) {
+    document.getElementById('enrolment_facility').value = screening.facility;
+  }
+  if (screening.dob) {
+    document.getElementById('enrolment_dob').value = parseStoredDate(screening.dob);
+  }
+  if (screening.age_years !== null && screening.age_years !== undefined) {
+    document.getElementById('enrolment_age_years').value = screening.age_years;
+  }
+  if (screening.age_months !== null && screening.age_months !== undefined) {
+    document.getElementById('enrolment_age_months').value = screening.age_months;
+  }
+  if (screening.height !== null && screening.height !== undefined) {
+    document.getElementById('enrolment_height').value = screening.height;
+  }
+  if (screening.weight !== null && screening.weight !== undefined) {
+    document.getElementById('enrolment_weight').value = screening.weight;
+  }
+  if (screening.temperature !== null && screening.temperature !== undefined) {
+    document.getElementById('enrolment_temperature').value = screening.temperature;
+  }
+  if (screening.temp_method) {
+    document.getElementById('enrolment_temp_method').value = screening.temp_method;
+  }
+  if (screening.resp_rate !== null && screening.resp_rate !== undefined) {
+    document.getElementById('enrolment_resp_rate').value = screening.resp_rate;
+  }
+  if (screening.pulse_rate !== null && screening.pulse_rate !== undefined) {
+    document.getElementById('enrolment_pulse_rate').value = screening.pulse_rate;
+  }
+  if (screening.bp) {
+    document.getElementById('enrolment_bp').value = screening.bp;
+  }
+  loadFormDraft('enrolment', [
+    'enrolment_facility', 'enrolment_dob', 'enrolment_age_years', 'enrolment_age_months',
+    'enrolment_marital_status', 'enrolment_husband_name', 'enrolment_village', 'enrolment_education',
+    'enrolment_occupation', 'enrolment_height', 'enrolment_weight', 'enrolment_temperature',
+    'enrolment_temp_method', 'enrolment_resp_rate', 'enrolment_pulse_rate', 'enrolment_bp', 'enrolment_estimated_ga'
+  ], screeningId);
+}
+
+async function autofillDeliveryFromSelectedScreening() {
+  const select = document.getElementById('delivery_screening_id');
+  if (!select) return;
+  const screeningId = select.value;
+  if (!screeningId) return;
+  saveLastScreeningId(screeningId);
+
+  resetFormFields([
+    'delivery_date', 'delivery_mother_weight', 'delivery_bmi', 'delivery_bmi_unknown',
+    'delivery_temperature', 'delivery_temp_method', 'delivery_resp_rate', 'delivery_pulse_rate',
+    'delivery_bp', 'delivery_oxygen_saturation', 'delivery_oxygen_support', 'delivery_abnormal_exam',
+    'delivery_abnormal_specify', 'delivery_delivery_date', 'delivery_delivery_time',
+    'delivery_location', 'delivery_location_other', 'delivery_provider', 'delivery_provider_other',
+    'delivery_mode', 'delivery_csection_indication', 'delivery_csection_indication_other'
+  ]);
+
+  const response = await fetch(`/api/screening/${encodeURIComponent(screeningId)}`);
+  if (!response.ok) return;
+  const screening = await response.json();
+  if (!screening) return;
+
+  const summary = document.getElementById('deliveryScreeningSummary');
+  if (summary) {
+    summary.textContent = `Facility: ${screening.facility || '-'} · DOB: ${screening.dob || '-'} · Age: ${screening.age_years || '-'} yrs ${screening.age_months || '-'} mths · BP: ${screening.bp || '-'} · Temp: ${screening.temperature || '-'} ${screening.temp_method || ''}`;
+  }
+
+  if (screening.temperature !== null && screening.temperature !== undefined) {
+    document.getElementById('delivery_temperature').value = screening.temperature;
+  }
+  if (screening.temp_method) {
+    document.getElementById('delivery_temp_method').value = screening.temp_method;
+  }
+  if (screening.resp_rate !== null && screening.resp_rate !== undefined) {
+    document.getElementById('delivery_resp_rate').value = screening.resp_rate;
+  }
+  if (screening.pulse_rate !== null && screening.pulse_rate !== undefined) {
+    document.getElementById('delivery_pulse_rate').value = screening.pulse_rate;
+  }
+  if (screening.bp) {
+    document.getElementById('delivery_bp').value = screening.bp;
+  }
+
+  try {
+    const deliveryResponse = await fetch(`/api/delivery/${encodeURIComponent(screeningId)}`);
+    if (deliveryResponse.ok) {
+      const delivery = await deliveryResponse.json();
+      if (delivery && delivery.screening_id) {
+        document.getElementById('delivery_mother_weight').value = delivery.mother_weight || '';
+        document.getElementById('delivery_bmi').value = delivery.bmi || '';
+        document.getElementById('delivery_bmi_unknown').checked = delivery.bmi_unknown === 'Yes';
+        document.getElementById('delivery_oxygen_saturation').value = delivery.oxygen_saturation || '';
+        document.getElementById('delivery_oxygen_support').value = delivery.oxygen_support || 'Room air';
+        document.getElementById('delivery_abnormal_exam').value = delivery.abnormal_exam || 'No';
+        document.getElementById('delivery_abnormal_specify').value = delivery.abnormal_specify || '';
+        document.getElementById('delivery_location').value = delivery.delivery_location || '';
+        document.getElementById('delivery_location_other').value = delivery.delivery_location_other || '';
+        document.getElementById('delivery_provider').value = delivery.delivery_provider || '';
+        document.getElementById('delivery_provider_other').value = delivery.delivery_provider_other || '';
+        document.getElementById('delivery_mode').value = delivery.mode || '';
+        document.getElementById('delivery_csection_indication').value = delivery.csection_indication || '';
+        document.getElementById('delivery_csection_indication_other').value = delivery.csection_indication_other || '';
+        document.getElementById('delivery_delivery_date').value = delivery.delivery_date || '';
+        document.getElementById('delivery_delivery_time').value = delivery.delivery_time || '';
+        setTimeout(() => {
+          toggleDeliveryBmiUnknown();
+          toggleDeliveryAbnormalSpecify();
+          toggleDeliveryLocationOther();
+          toggleDeliveryProviderOther();
+          toggleDeliveryCsectionIndication();
+          toggleDeliveryCsectionIndicationOther();
+        }, 0);
+      }
+    }
+  } catch (error) {
+    console.warn('Unable to load existing delivery data', error);
+  }
+
+  loadFormDraft('delivery', [
+    'delivery_date', 'delivery_mother_weight', 'delivery_bmi', 'delivery_bmi_unknown',
+    'delivery_temperature', 'delivery_temp_method', 'delivery_resp_rate', 'delivery_pulse_rate',
+    'delivery_bp', 'delivery_oxygen_saturation', 'delivery_oxygen_support', 'delivery_abnormal_exam',
+    'delivery_abnormal_specify', 'delivery_delivery_date', 'delivery_delivery_time',
+    'delivery_location', 'delivery_location_other', 'delivery_provider', 'delivery_provider_other',
+    'delivery_mode', 'delivery_csection_indication', 'delivery_csection_indication_other'
+  ], screeningId);
+}
+
+async function autofillCloseoutFromSelectedScreening() {
+  const select = document.getElementById('closeout_screening_id');
+  if (!select) return;
+  const screeningId = select.value;
+  if (!screeningId) return;
+  saveLastScreeningId(screeningId);
+
+  resetFormFields([
+    'closeout_date', 'closeout_termination_date', 'closeout_status', 'closeout_reason'
+  ]);
+
+  const response = await fetch(`/api/screening/${encodeURIComponent(screeningId)}`);
+  if (!response.ok) return;
+  const screening = await response.json();
+  if (!screening) return;
+
+  const summary = document.getElementById('closeoutScreeningSummary');
+  if (summary) {
+    summary.textContent = `Facility: ${screening.facility || '-'} · DOB: ${screening.dob || '-'} · Age: ${screening.age_years || '-'} yrs ${screening.age_months || '-'} mths · BP: ${screening.bp || '-'} · Temp: ${screening.temperature || '-'} ${screening.temp_method || ''}`;
+  }
+  loadFormDraft('closeout', [
+    'closeout_date', 'closeout_termination_date', 'closeout_status', 'closeout_reason'
+  ], screeningId);
+}
+
+function setDeliveryFormListeners() {
+  const location = document.getElementById('delivery_location');
+  const provider = document.getElementById('delivery_provider');
+  const mode = document.getElementById('delivery_mode');
+  const obligationFields = [location, provider, mode];
+
+  if (location) {
+    location.addEventListener('change', toggleDeliveryLocationOther);
+  }
+  if (provider) {
+    provider.addEventListener('change', toggleDeliveryProviderOther);
+  }
+  if (mode) {
+    mode.addEventListener('change', toggleDeliveryCsectionIndication);
+  }
+  const csection = document.getElementById('delivery_csection_indication');
+  if (csection) {
+    csection.addEventListener('change', toggleDeliveryCsectionIndicationOther);
+  }
+}
+
+function toggleDeliveryBmiUnknown() {
+  const bmiInput = document.getElementById('delivery_bmi');
+  const unknown = document.getElementById('delivery_bmi_unknown');
+  if (!bmiInput || !unknown) return;
+  bmiInput.disabled = unknown.checked;
+  if (unknown.checked) {
+    bmiInput.value = '';
+  }
+}
+
+function toggleDeliveryAbnormalSpecify() {
+  const abnormalSelect = document.getElementById('delivery_abnormal_exam');
+  const abnormalSpecify = document.getElementById('delivery_abnormal_specify');
+  if (!abnormalSelect || !abnormalSpecify) return;
+  abnormalSpecify.disabled = abnormalSelect.value !== 'Yes';
+  if (abnormalSelect.value !== 'Yes') {
+    abnormalSpecify.value = '';
+  }
+}
+
+function toggleDeliveryLocationOther() {
+  const location = document.getElementById('delivery_location');
+  const other = document.getElementById('delivery_location_other');
+  if (!location || !other) return;
+  const enabled = location.value === 'Other hospital/clinic' || location.value === 'Other location';
+  other.disabled = !enabled;
+  if (!enabled) {
+    other.value = '';
+  }
+}
+
+function toggleDeliveryProviderOther() {
+  const provider = document.getElementById('delivery_provider');
+  const other = document.getElementById('delivery_provider_other');
+  if (!provider || !other) return;
+  const enabled = provider.value === 'Other';
+  other.disabled = !enabled;
+  if (!enabled) {
+    other.value = '';
+  }
+}
+
+function toggleDeliveryCsectionIndication() {
+  const mode = document.getElementById('delivery_mode');
+  const indication = document.getElementById('delivery_csection_indication');
+  if (!mode || !indication) return;
+  const enabled = mode.value === 'C-section';
+  indication.disabled = !enabled;
+  if (!enabled) {
+    indication.value = '';
+  }
+  toggleDeliveryCsectionIndicationOther();
+}
+
+function toggleDeliveryCsectionIndicationOther() {
+  const indication = document.getElementById('delivery_csection_indication');
+  const other = document.getElementById('delivery_csection_indication_other');
+  if (!indication || !other) return;
+  const enabled = indication.value === 'Other';
+  other.disabled = !enabled;
+  if (!enabled) {
+    other.value = '';
+  }
+}
+
+function setDeliveryFormListeners() {
+  const location = document.getElementById('delivery_location');
+  const provider = document.getElementById('delivery_provider');
+  const mode = document.getElementById('delivery_mode');
+  const csection = document.getElementById('delivery_csection_indication');
+
+  if (location) {
+    location.addEventListener('change', toggleDeliveryLocationOther);
+  }
+  if (provider) {
+    provider.addEventListener('change', toggleDeliveryProviderOther);
+  }
+  if (mode) {
+    mode.addEventListener('change', toggleDeliveryCsectionIndication);
+  }
+  if (csection) {
+    csection.addEventListener('change', toggleDeliveryCsectionIndicationOther);
+  }
+}
+
+function toggleDeliveryBmiUnknown() {
+  const bmiInput = document.getElementById('delivery_bmi');
+  const unknown = document.getElementById('delivery_bmi_unknown');
+  if (!bmiInput || !unknown) return;
+  bmiInput.disabled = unknown.checked;
+  if (unknown.checked) {
+    bmiInput.value = '';
+  }
+}
+
+function toggleDeliveryAbnormalSpecify() {
+  const abnormalSelect = document.getElementById('delivery_abnormal_exam');
+  const abnormalSpecify = document.getElementById('delivery_abnormal_specify');
+  if (!abnormalSelect || !abnormalSpecify) return;
+  const enabled = abnormalSelect.value === 'Yes';
+  abnormalSpecify.disabled = !enabled;
+  if (!enabled) {
+    abnormalSpecify.value = '';
+  }
+}
+
+function toggleDeliveryLocationOther() {
+  const location = document.getElementById('delivery_location');
+  const other = document.getElementById('delivery_location_other');
+  if (!location || !other) return;
+  const enabled = location.value === 'Other hospital/clinic' || location.value === 'Other location';
+  other.disabled = !enabled;
+  if (!enabled) {
+    other.value = '';
+  }
+}
+
+function toggleDeliveryProviderOther() {
+  const provider = document.getElementById('delivery_provider');
+  const other = document.getElementById('delivery_provider_other');
+  if (!provider || !other) return;
+  const enabled = provider.value === 'Other';
+  other.disabled = !enabled;
+  if (!enabled) {
+    other.value = '';
+  }
+}
+
+function toggleDeliveryCsectionIndication() {
+  const mode = document.getElementById('delivery_mode');
+  const indication = document.getElementById('delivery_csection_indication');
+  if (!mode || !indication) return;
+  const enabled = mode.value === 'C-section';
+  indication.disabled = !enabled;
+  if (!enabled) {
+    indication.value = '';
+  }
+  toggleDeliveryCsectionIndicationOther();
+}
+
+function parseStoredDate(value) {
+  if (!value) return '';
+  const monthMap = {
+    Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06',
+    Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12'
+  };
+  const parts = value.split('/');
+  if (parts.length === 3) {
+    const [day, month, year] = parts;
+    const monthValue = monthMap[month] || month;
+    return `${year}-${monthValue}-${day.padStart(2, '0')}`;
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return value;
+  }
+  return '';
+}
+
+function formatDateInput(value) {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${String(d.getDate()).padStart(2, '0')}/${monthNames[d.getMonth()]}/${d.getFullYear()}`;
+}
+
+function setToday(id) {
+  const today = new Date().toISOString().slice(0, 10);
+  const element = document.getElementById(id);
+  if (element && !element.value) {
+    element.value = today;
+  }
+}
+
+function grantSaveControls() {
+  const saveButtons = document.querySelectorAll('.save-button');
+  saveButtons.forEach(btn => {
+    btn.disabled = currentUser.role !== 'Data Manager';
+    btn.classList.toggle('opacity-50', currentUser.role !== 'Data Manager');
+  });
+  const warning = document.getElementById('saveNotice');
+  if (warning) {
+    warning.textContent = currentUser.role !== 'Data Manager'
+      ? 'You are viewing as Field Technician. Add/edit operations are disabled.'
+      : 'You may enter or update data in this role.';
+  }
+}
+
+async function loadDashboard() {
+  const response = await fetch('/api/stats');
+  const data = await response.json();
+
+  document.getElementById('stats').innerHTML = `
+    ${renderStatCard('Screened', data.screened, 'fas fa-users')}
+    ${renderStatCard('Enrolled', data.enrolled, 'fas fa-user-check')}
+    ${renderStatCard('Delivered', data.delivered, 'fas fa-baby')}
+    ${renderStatCard('Closeouts', data.closed, 'fas fa-clipboard-list')}
+  `;
+
+  const summaryBody = document.getElementById('siteSummary');
+  summaryBody.innerHTML = data.sites.map(site => `
+    <tr class="border-b border-slate-200">
+      <td class="py-3 px-2 font-medium">${site.facility}</td>
+      <td class="py-3 px-2">${site.screened}</td>
+      <td class="py-3 px-2">${site.enrolled}</td>
+      <td class="py-3 px-2">${site.delivered}</td>
+      <td class="py-3 px-2">${site.closed}</td>
+    </tr>
+  `).join('');
+}
+
+function renderStatCard(label, count, icon) {
+  return `<div class="bg-white rounded-3xl shadow p-6 flex items-center gap-4">
+    <div class="rounded-2xl bg-blue-50 text-blue-700 p-4"><i class="${icon} text-2xl"></i></div>
+    <div>
+      <p class="text-3xl font-bold">${count}</p>
+      <p class="text-slate-500">${label}</p>
+    </div>
+  </div>`;
+}
+
+async function loadSection(section) {
+  const area = document.getElementById('contentArea');
+  grantSaveControls();
+
+  switch (section) {
+    case 'dashboard':
+      area.innerHTML = `<div class="bg-white rounded-3xl shadow p-8">
+          <h2 class="text-2xl font-bold mb-4">Dashboard</h2>
+          <p class="text-slate-600">Use the cards above to monitor screening, enrolment, delivery, and closeout progress.</p>
+        </div>`;
+      break;
+
+    case 'screening':
+      area.innerHTML = getScreeningSection();
+      await prepareScreeningId();
+      setToday('screening_date');
+      setToday('screening_lmp');
+      updateConsentReason();
+      grantSaveControls();
+      break;
+
+    case 'enrolment':
+      area.innerHTML = getEnrolmentSection();
+      await refreshEligibleOptions();
+      await maybeAutoSelectScreeningId('enrolment_screening_id');
+      await autofillEnrolmentFromSelectedScreening();
+      attachFormDraftListeners('enrolment', [
+        'enrolment_facility', 'enrolment_dob', 'enrolment_age_years', 'enrolment_age_months',
+        'enrolment_marital_status', 'enrolment_husband_name', 'enrolment_village', 'enrolment_education',
+        'enrolment_occupation', 'enrolment_height', 'enrolment_weight', 'enrolment_temperature',
+        'enrolment_temp_method', 'enrolment_resp_rate', 'enrolment_pulse_rate', 'enrolment_bp', 'enrolment_estimated_ga'
+      ], () => document.getElementById('enrolment_screening_id')?.value || 'none');
+      loadFormDraft('enrolment', [
+        'enrolment_facility', 'enrolment_dob', 'enrolment_age_years', 'enrolment_age_months',
+        'enrolment_marital_status', 'enrolment_husband_name', 'enrolment_village', 'enrolment_education',
+        'enrolment_occupation', 'enrolment_height', 'enrolment_weight', 'enrolment_temperature',
+        'enrolment_temp_method', 'enrolment_resp_rate', 'enrolment_pulse_rate', 'enrolment_bp', 'enrolment_estimated_ga'
+      ], document.getElementById('enrolment_screening_id')?.value || 'none');
+      grantSaveControls();
+      break;
+
+    case 'delivery':
+      area.innerHTML = getDeliverySection();
+      await refreshEnrolledOptions();
+      await maybeAutoSelectScreeningId('delivery_screening_id');
+      await autofillDeliveryFromSelectedScreening();
+      setDeliveryFormListeners();
+      attachFormDraftListeners('delivery', [
+        'delivery_date', 'delivery_mother_weight', 'delivery_bmi', 'delivery_bmi_unknown',
+        'delivery_temperature', 'delivery_temp_method', 'delivery_resp_rate', 'delivery_pulse_rate',
+        'delivery_bp', 'delivery_oxygen_saturation', 'delivery_oxygen_support', 'delivery_abnormal_exam',
+        'delivery_abnormal_specify', 'delivery_delivery_date', 'delivery_delivery_time',
+        'delivery_location', 'delivery_location_other', 'delivery_provider', 'delivery_provider_other',
+        'delivery_mode', 'delivery_csection_indication', 'delivery_csection_indication_other'
+      ], () => document.getElementById('delivery_screening_id')?.value || 'none');
+      loadFormDraft('delivery', [
+        'delivery_date', 'delivery_mother_weight', 'delivery_bmi', 'delivery_bmi_unknown',
+        'delivery_temperature', 'delivery_temp_method', 'delivery_resp_rate', 'delivery_pulse_rate',
+        'delivery_bp', 'delivery_oxygen_saturation', 'delivery_oxygen_support', 'delivery_abnormal_exam',
+        'delivery_abnormal_specify', 'delivery_delivery_date', 'delivery_delivery_time',
+        'delivery_location', 'delivery_location_other', 'delivery_provider', 'delivery_provider_other',
+        'delivery_mode', 'delivery_csection_indication', 'delivery_csection_indication_other'
+      ], document.getElementById('delivery_screening_id')?.value || 'none');
+      setToday('delivery_date');
+      grantSaveControls();
+      break;
+
+    case 'closeout':
+      area.innerHTML = getCloseoutSection();
+      await refreshAllScreeningOptions();
+      await maybeAutoSelectScreeningId('closeout_screening_id');
+      await autofillCloseoutFromSelectedScreening();
+      attachFormDraftListeners('closeout', [
+        'closeout_date', 'closeout_termination_date', 'closeout_status', 'closeout_reason'
+      ], () => document.getElementById('closeout_screening_id')?.value || 'none');
+      loadFormDraft('closeout', [
+        'closeout_date', 'closeout_termination_date', 'closeout_status', 'closeout_reason'
+      ], document.getElementById('closeout_screening_id')?.value || 'none');
+      setToday('closeout_date');
+      setToday('closeout_termination_date');
+      grantSaveControls();
+      break;
+
+    case 'records':
+      area.innerHTML = `<div class="bg-white rounded-3xl shadow p-8"><h2 class="text-2xl font-bold mb-4">Recent Screenings</h2><div id="recordsTable"></div></div>`;
+      await loadRecords();
+      break;
+
+    case 'admin':
+      area.innerHTML = getAdminSection();
+      await loadAdminUsers();
+      await loadAdminScreenings();
+      break;
+
+    default:
+      area.innerHTML = '';
+  }
+}
+
+function getAdminSection() {
+  return `
+  <div class="bg-white rounded-3xl shadow p-8">
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+      <div>
+        <h2 class="text-2xl font-bold">User Administration</h2>
+        <p class="text-slate-500">View all accounts and reset passwords for users.</p>
+      </div>
+      <span id="saveNotice" class="text-sm text-slate-500"></span>
+    </div>
+
+    <div class="bg-slate-50 border border-slate-200 rounded-3xl p-6 mb-6">
+      <h3 class="text-xl font-semibold mb-4">Reset selected user password</h3>
+      <div class="grid gap-4 md:grid-cols-2">
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Selected User</label>
+          <input id="admin_selected_user" class="w-full p-4 border rounded-2xl bg-slate-100" readonly placeholder="Pick a user below">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700">New Password</label>
+          <input id="admin_new_password" type="password" class="w-full p-4 border rounded-2xl" placeholder="New password">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Confirm New Password</label>
+          <input id="admin_new_password_confirm" type="password" class="w-full p-4 border rounded-2xl" placeholder="Confirm password">
+        </div>
+      </div>
+      <div class="flex justify-end mt-4">
+        <button type="button" onclick="resetSelectedUserPassword()" class="bg-blue-900 hover:bg-blue-800 text-white px-8 py-4 rounded-2xl font-semibold">Reset Password</button>
+      </div>
+      <p id="adminMessage" class="mt-4 text-sm text-red-600"></p>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-left text-sm">
+        <thead>
+          <tr class="text-slate-600 uppercase text-xs tracking-wider border-b border-slate-200">
+            <th class="py-3 px-2">Username</th>
+            <th class="py-3 px-2">Full Name</th>
+            <th class="py-3 px-2">Role</th>
+            <th class="py-3 px-2">Created</th>
+            <th class="py-3 px-2">Action</th>
+          </tr>
+        </thead>
+        <tbody id="usersTable" class="text-slate-700"></tbody>
+      </table>
+    </div>
+
+    <div class="bg-slate-50 border border-slate-200 rounded-3xl p-6 mt-8">
+      <h3 class="text-xl font-semibold mb-4">Screening Record Maintenance</h3>
+      <p class="text-sm text-slate-500 mb-4">Select rows to delete individually, or remove all screening records at once.</p>
+      <div class="flex flex-wrap gap-3 mb-4">
+        <button type="button" id="deleteSelectedButton" onclick="deleteSelectedScreenings()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-2xl font-semibold disabled:opacity-50" disabled>Delete selected</button>
+        <button type="button" onclick="deleteAllScreenings()" class="bg-red-900 hover:bg-red-800 text-white px-6 py-3 rounded-2xl font-semibold">Delete all</button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-left text-sm">
+          <thead>
+            <tr class="text-slate-600 uppercase text-xs tracking-wider border-b border-slate-200">
+              <th class="py-3 px-2"><input type="checkbox" id="adminSelectAll" onchange="selectAllScreenings(this.checked)"></th>
+              <th class="py-3 px-2">Screening ID</th>
+              <th class="py-3 px-2">Facility</th>
+              <th class="py-3 px-2">DOB</th>
+              <th class="py-3 px-2">Eligibility</th>
+              <th class="py-3 px-2">Consent</th>
+              <th class="py-3 px-2">Action</th>
+            </tr>
+          </thead>
+          <tbody id="adminScreeningsTable" class="text-slate-700"></tbody>
+        </table>
+      </div>
+      <p id="adminScreeningMessage" class="mt-4 text-sm text-red-600"></p>
+    </div>
+  </div>`;
+}
+
+async function loadAdminUsers() {
+  const response = await fetch('/api/users');
+  const result = await response.json();
+  const msg = document.getElementById('adminMessage');
+  if (!response.ok) {
+    if (msg) msg.textContent = result.message || 'Unable to load users';
+    return;
+  }
+  const rows = result.map(user => `
+    <tr class="border-b border-slate-200">
+      <td class="py-3 px-2 font-medium">${user.username}</td>
+      <td class="py-3 px-2">${user.full_name}</td>
+      <td class="py-3 px-2">${user.role}</td>
+      <td class="py-3 px-2">${new Date(user.created_at).toLocaleString()}</td>
+      <td class="py-3 px-2">
+        <button type="button" onclick="selectAdminUser('${user.username}')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-2xl text-sm">Select</button>
+      </td>
+    </tr>`).join('');
+  document.getElementById('usersTable').innerHTML = rows;
+  if (msg) msg.textContent = '';
+}
+
+async function loadAdminScreenings() {
+  const response = await fetch('/api/screenings');
+  const result = await response.json();
+  const message = document.getElementById('adminScreeningMessage');
+  if (!response.ok) {
+    if (message) message.textContent = result.message || 'Unable to load screening records';
+    return;
+  }
+  const rows = result.map(item => `
+    <tr class="border-b border-slate-200 hover:bg-slate-50">
+      <td class="py-3 px-2 font-medium">
+        <input type="checkbox" class="admin-screening-checkbox" value="${item.screening_id}" onchange="updateDeleteButtons()">
+      </td>
+      <td class="py-3 px-2 font-medium">${item.screening_id}</td>
+      <td class="py-3 px-2">${item.facility || '-'}</td>
+      <td class="py-3 px-2">${item.dob || '-'}</td>
+      <td class="py-3 px-2">${item.eligibility || '-'}</td>
+      <td class="py-3 px-2">${item.consent || '-'}</td>
+      <td class="py-3 px-2">
+        <button type="button" onclick="deleteScreening('${item.screening_id}')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-2xl text-sm">Delete</button>
+      </td>
+    </tr>`).join('');
+  document.getElementById('adminScreeningsTable').innerHTML = rows;
+  if (message) message.textContent = '';
+  document.getElementById('adminSelectAll').checked = false;
+  updateDeleteButtons();
+}
+
+function getSelectedScreenings() {
+  return Array.from(document.querySelectorAll('.admin-screening-checkbox:checked')).map(cb => cb.value);
+}
+
+function updateDeleteButtons() {
+  const selected = getSelectedScreenings();
+  const deleteButton = document.getElementById('deleteSelectedButton');
+  if (deleteButton) {
+    deleteButton.disabled = selected.length === 0;
+  }
+  const selectAll = document.getElementById('adminSelectAll');
+  const checkboxes = document.querySelectorAll('.admin-screening-checkbox');
+  if (selectAll && checkboxes.length > 0) {
+    selectAll.checked = selected.length > 0 && selected.length === checkboxes.length;
+    selectAll.indeterminate = selected.length > 0 && selected.length < checkboxes.length;
+  }
+}
+
+function selectAllScreenings(checked) {
+  document.querySelectorAll('.admin-screening-checkbox').forEach(cb => {
+    cb.checked = checked;
+  });
+  updateDeleteButtons();
+}
+
+async function deleteSelectedScreenings() {
+  const selectedIds = getSelectedScreenings();
+  if (!selectedIds.length) {
+    return;
+  }
+  if (!confirm(`Delete ${selectedIds.length} selected screening(s) and renumber remaining IDs?`)) {
+    return;
+  }
+
+  const response = await fetch('/api/screenings/delete', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({screening_ids: selectedIds})
+  });
+  const result = await response.json();
+  const message = document.getElementById('adminScreeningMessage');
+
+  if (!response.ok || !result.success) {
+    if (message) {
+      message.classList.remove('text-emerald-600');
+      message.classList.add('text-red-600');
+      message.textContent = result.message || 'Unable to delete selected screenings';
+    }
+    return;
+  }
+
+  if (message) {
+    message.classList.remove('text-red-600');
+    message.classList.add('text-emerald-600');
+    message.textContent = result.message || `Deleted ${selectedIds.length} screenings.`;
+  }
+
+  clearLastScreeningIdIfDeleted(selectedIds[0]);
+  await loadAdminScreenings();
+  await loadRecords();
+  await refreshEligibleOptions();
+  await refreshEnrolledOptions();
+  await refreshAllScreeningOptions();
+  await prepareScreeningId();
+}
+
+async function deleteAllScreenings() {
+  if (!confirm('Delete ALL screening records and clear every screening table?')) {
+    return;
+  }
+
+  const response = await fetch('/api/screenings/delete-all', {
+    method: 'POST'
+  });
+  const result = await response.json();
+  const message = document.getElementById('adminScreeningMessage');
+
+  if (!response.ok || !result.success) {
+    if (message) {
+      message.classList.remove('text-emerald-600');
+      message.classList.add('text-red-600');
+      message.textContent = result.message || 'Unable to delete all screenings';
+    }
+    return;
+  }
+
+  if (message) {
+    message.classList.remove('text-red-600');
+    message.classList.add('text-emerald-600');
+    message.textContent = result.message || 'All screening records have been deleted.';
+  }
+
+  window.localStorage.removeItem('lastScreeningId');
+  await loadAdminScreenings();
+  await loadRecords();
+  await refreshEligibleOptions();
+  await refreshEnrolledOptions();
+  await refreshAllScreeningOptions();
+  await prepareScreeningId();
+}
+
+async function deleteScreening(screeningId) {
+  if (!screeningId || !confirm(`Delete ${screeningId} and renumber remaining IDs?`)) {
+    return;
+  }
+
+  const response = await fetch(`/api/screenings/${encodeURIComponent(screeningId)}`, {
+    method: 'DELETE'
+  });
+  const result = await response.json();
+  const message = document.getElementById('adminScreeningMessage');
+
+  if (!response.ok || !result.success) {
+    if (message) {
+      message.classList.remove('text-emerald-600');
+      message.classList.add('text-red-600');
+      message.textContent = result.message || 'Unable to delete screening';
+    }
+    return;
+  }
+
+  if (message) {
+    message.classList.remove('text-red-600');
+    message.classList.add('text-emerald-600');
+    message.textContent = result.message || `Deleted ${screeningId} and renumbered remaining records.`;
+  }
+
+  clearLastScreeningIdIfDeleted(screeningId);
+  await loadAdminScreenings();
+  await loadRecords();
+  await refreshEligibleOptions();
+  await refreshEnrolledOptions();
+  await refreshAllScreeningOptions();
+  await prepareScreeningId();
+}
+
+function clearLastScreeningIdIfDeleted(screeningId) {
+  const lastId = getLastScreeningId();
+  if (lastId === screeningId) {
+    window.localStorage.removeItem('lastScreeningId');
+  }
+}
+
+function selectAdminUser(username) {
+  document.getElementById('admin_selected_user').value = username;
+  document.getElementById('adminMessage').textContent = `Selected ${username}. Enter a new password and submit.`;
+}
+
+async function resetSelectedUserPassword() {
+  const username = document.getElementById('admin_selected_user').value;
+  const password = document.getElementById('admin_new_password').value;
+  const confirm = document.getElementById('admin_new_password_confirm').value;
+  const msg = document.getElementById('adminMessage');
+  msg.textContent = '';
+
+  if (!username) {
+    msg.textContent = 'Please select a user first.';
+    return;
+  }
+  if (!password || !confirm) {
+    msg.textContent = 'Enter and confirm the new password.';
+    return;
+  }
+  if (password !== confirm) {
+    msg.textContent = 'Passwords do not match.';
+    return;
+  }
+
+  const response = await fetch(`/api/users/${encodeURIComponent(username)}/reset-password`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ new_password: password })
+  });
+  const result = await response.json();
+  if (!result.success) {
+    msg.textContent = result.message || 'Unable to reset password';
+    return;
+  }
+
+  msg.classList.remove('text-red-600');
+  msg.classList.add('text-emerald-600');
+  msg.textContent = result.message || `Password updated for ${username}.`;
+  document.getElementById('admin_new_password').value = '';
+  document.getElementById('admin_new_password_confirm').value = '';
+}
+
+function getScreeningSection() {
+  return `
+    <div class="bg-white rounded-3xl shadow p-8">
+      <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+        <div>
+          <h2 class="text-2xl font-bold">Screening Form</h2>
+          <p class="text-slate-500">Enter a new screening or update an existing Screening ID.</p>
+        </div>
+        <span id="saveNotice" class="text-sm text-slate-500"></span>
+      </div>
+      <form id="screeningForm" onsubmit="submitScreening(event)" class="space-y-6">
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Screening ID</label>
+            <input id="screening_id" class="w-full p-4 border rounded-2xl" required>
+            <p class="text-xs text-slate-500 mt-2">Screening IDs are auto-generated to reduce confusion. You can edit if needed.</p>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Date of Interview</label>
+            <input id="screening_date" type="date" class="w-full p-4 border rounded-2xl" required>
+          </div>
+        </div>
+        <div class="grid gap-4 md:grid-cols-3">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Health Facility</label>
+            <select id="screening_facility" class="w-full p-4 border rounded-2xl" required>
+              ${facilityOptions.map(f => `<option value="${f}">${f}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Date of Birth</label>
+            <input id="screening_dob" type="date" min="1972-01-01" max="2006-01-01" class="w-full p-4 border rounded-2xl" required>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold mb-2">Age (yrs)</label>
+              <input id="screening_age_years" type="number" min="0" class="w-full p-4 border rounded-2xl" required>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-2">Age (mths)</label>
+              <input id="screening_age_months" type="number" min="0" max="11" class="w-full p-4 border rounded-2xl" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-3">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Height (cm)</label>
+            <input id="screening_height" type="number" step="0.1" min="0" class="w-full p-4 border rounded-2xl">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Weight (kg)</label>
+            <input id="screening_weight" type="number" step="0.1" min="0" class="w-full p-4 border rounded-2xl">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Temperature</label>
+            <div class="flex gap-2">
+              <input id="screening_temperature" type="number" step="0.1" min="30" max="45" class="w-full p-4 border rounded-2xl">
+            </div>
+          </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-3">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Temp Method</label>
+            <select id="screening_temp_method" class="w-full p-4 border rounded-2xl">
+              <option value="Axillary">Axillary</option>
+              <option value="Oral">Oral</option>
+              <option value="Tympanic">Tympanic</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Respiratory Rate</label>
+            <input id="screening_resp_rate" type="number" min="0" class="w-full p-4 border rounded-2xl">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Pulse Rate</label>
+            <input id="screening_pulse_rate" type="number" min="0" class="w-full p-4 border rounded-2xl">
+          </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Blood Pressure</label>
+            <input id="screening_bp" class="w-full p-4 border rounded-2xl" placeholder="e.g. 120/80">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">LMP Date</label>
+            <input id="screening_lmp" type="date" class="w-full p-4 border rounded-2xl">
+          </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Fundal Height (cm)</label>
+            <input id="screening_fundal_height" type="number" min="0" class="w-full p-4 border rounded-2xl">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Study Eligibility</label>
+            <select id="screening_eligibility" class="w-full p-4 border rounded-2xl" required>
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+        </div>
+
+        <fieldset class="border border-slate-200 rounded-3xl p-6">
+          <legend class="px-2 font-semibold">Inclusion Criteria</legend>
+          <div class="grid gap-4 md:grid-cols-2 mt-4">
+            ${['Resident of village within 15 km','Pregnancy confirmed','Gestation < 31 weeks','Consents to HIV testing','Willing to deliver in study hospital'].map((label, index) => `
+              <div>
+                <label class="block text-sm font-medium mb-2">${label}</label>
+                <select id="screening_inc_${index}" class="w-full p-4 border rounded-2xl" required>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+            `).join('')}
+          </div>
+        </fieldset>
+
+        <fieldset class="border border-slate-200 rounded-3xl p-6">
+          <legend class="px-2 font-semibold">Exclusion Criteria</legend>
+          <div class="grid gap-4 md:grid-cols-2 mt-4">
+            ${['Multiple pregnancy','History of fistula repair or deformity','Unable to give informed consent'].map((label, index) => `
+              <div>
+                <label class="block text-sm font-medium mb-2">${label}</label>
+                <select id="screening_exc_${index}" class="w-full p-4 border rounded-2xl" required>
+                  <option value="No">No</option>
+                  <option value="Yes">Yes</option>
+                  <option value="Don’t Know">Don’t Know</option>
+                </select>
+              </div>
+            `).join('')}
+          </div>
+        </fieldset>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Consented?</label>
+            <select id="screening_consent" onchange="updateConsentReason()" class="w-full p-4 border rounded-2xl" required>
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Reason for refusal</label>
+            <input id="screening_consent_reason" class="w-full p-4 border rounded-2xl" placeholder="If consent is No">
+          </div>
+        </div>
+
+        <div class="flex justify-end">
+          <button type="submit" class="save-button bg-blue-900 hover:bg-blue-800 text-white px-8 py-4 rounded-2xl font-semibold">Save Screening</button>
+        </div>
+        <p id="screeningMessage" class="text-sm text-red-600"></p>
+      </form>
+    </div>
+  `;
+}
+
+function getEnrolmentSection() {
+  return `
+    <div class="bg-white rounded-3xl shadow p-8">
+      <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+        <div>
+          <h2 class="text-2xl font-bold">Enrolment Form</h2>
+          <p class="text-slate-500">Only eligible Screening IDs are shown here.</p>
+        </div>
+        <span id="saveNotice" class="text-sm text-slate-500"></span>
+      </div>
+      <form id="enrolmentForm" onsubmit="submitEnrolment(event)" class="space-y-6">
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Eligible Screening ID</label>
+            <select id="enrolment_screening_id" onchange="autofillEnrolmentFromSelectedScreening(); saveSelectedScreeningId(this.value);" class="w-full p-4 border rounded-2xl" required></select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Health Facility</label>
+            <select id="enrolment_facility" class="w-full p-4 border rounded-2xl" required>
+              ${facilityOptions.map(f => `<option value="${f}">${f}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-3">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Date of Birth</label>
+            <input id="enrolment_dob" type="date" min="1972-01-01" max="2006-01-01" class="w-full p-4 border rounded-2xl" required>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Age (yrs)</label>
+            <input id="enrolment_age_years" type="number" min="0" class="w-full p-4 border rounded-2xl">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Age (mths)</label>
+            <input id="enrolment_age_months" type="number" min="0" max="11" class="w-full p-4 border rounded-2xl">
+          </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Marital Status</label>
+            <select id="enrolment_marital_status" class="w-full p-4 border rounded-2xl" required>
+              <option>Single</option>
+              <option>Married</option>
+              <option>Widowed</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Husband's Name</label>
+            <input id="enrolment_husband_name" class="w-full p-4 border rounded-2xl" placeholder="If married">
+          </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Village of Residence</label>
+            <input id="enrolment_village" class="w-full p-4 border rounded-2xl" required>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Education Level</label>
+            <select id="enrolment_education" class="w-full p-4 border rounded-2xl" required>
+              <option>Never attended school</option>
+              <option>Primary</option>
+              <option>Secondary</option>
+              <option>University/College</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Occupation</label>
+            <select id="enrolment_occupation" class="w-full p-4 border rounded-2xl" required>
+              <option>Farmer</option>
+              <option>Business woman</option>
+              <option>Fisherman/Fish monger</option>
+              <option>Home maker</option>
+              <option>Salaried worker</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold mb-2">Height (cm)</label>
+              <input id="enrolment_height" type="number" step="0.1" min="0" class="w-full p-4 border rounded-2xl">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-2">Weight (kg)</label>
+              <input id="enrolment_weight" type="number" step="0.1" min="0" class="w-full p-4 border rounded-2xl">
+            </div>
+          </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-3">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Temperature</label>
+            <input id="enrolment_temperature" type="number" step="0.1" min="30" max="45" class="w-full p-4 border rounded-2xl">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Temp Method</label>
+            <select id="enrolment_temp_method" class="w-full p-4 border rounded-2xl">
+              <option>Axillary</option>
+              <option>Oral</option>
+              <option>Tympanic</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Respiratory Rate</label>
+            <input id="enrolment_resp_rate" type="number" min="0" class="w-full p-4 border rounded-2xl">
+          </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Pulse Rate</label>
+            <input id="enrolment_pulse_rate" type="number" min="0" class="w-full p-4 border rounded-2xl">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Blood Pressure</label>
+            <input id="enrolment_bp" class="w-full p-4 border rounded-2xl" placeholder="e.g. 120/80">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2">Estimated Gestational Age</label>
+          <input id="enrolment_estimated_ga" class="w-full p-4 border rounded-2xl" placeholder="e.g. 24 weeks">
+        </div>
+
+        <div class="flex justify-end">
+          <button type="submit" class="save-button bg-blue-900 hover:bg-blue-800 text-white px-8 py-4 rounded-2xl font-semibold">Save Enrolment</button>
+        </div>
+        <p id="enrolmentMessage" class="text-sm text-red-600"></p>
+      </form>
+    </div>
+  `;
+}
+
+function getDeliverySection() {
+  return `
+    <div class="bg-white rounded-3xl shadow p-8">
+      <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+        <div>
+          <h2 class="text-2xl font-bold">Delivery Form</h2>
+          <p class="text-slate-500">Delivery records can only be entered after enrolment.</p>
+        </div>
+        <span id="saveNotice" class="text-sm text-slate-500"></span>
+      </div>
+      <form id="deliveryForm" onsubmit="submitDelivery(event)" class="space-y-6">
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Enrolled Screening ID</label>
+            <select id="delivery_screening_id" onchange="autofillDeliveryFromSelectedScreening(); saveSelectedScreeningId(this.value);" class="w-full p-4 border rounded-2xl" required></select>
+            <p id="deliveryScreeningSummary" class="text-xs text-slate-500 mt-2">Select an enrolled Screening ID to auto-fill details.</p>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Delivery Assessment Date</label>
+            <input id="delivery_date" type="date" class="w-full p-4 border rounded-2xl" required>
+          </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Mother's weight (kg)</label>
+            <input id="delivery_mother_weight" type="number" step="0.1" min="0" class="w-full p-4 border rounded-2xl">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Temperature</label>
+            <input id="delivery_temperature" type="number" step="0.1" min="30" max="45" class="w-full p-4 border rounded-2xl">
+          </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-3">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Temp Method</label>
+            <select id="delivery_temp_method" class="w-full p-4 border rounded-2xl">
+              <option>Axillary</option>
+              <option>Oral</option>
+              <option>Tympanic</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Respiratory Rate</label>
+            <input id="delivery_resp_rate" type="number" min="0" class="w-full p-4 border rounded-2xl">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Pulse Rate</label>
+            <input id="delivery_pulse_rate" type="number" min="0" class="w-full p-4 border rounded-2xl">
+          </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Blood Pressure</label>
+            <input id="delivery_bp" class="w-full p-4 border rounded-2xl" placeholder="e.g. 120/80">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Oxygen Saturation (%)</label>
+            <input id="delivery_oxygen_saturation" type="number" min="0" max="100" class="w-full p-4 border rounded-2xl">
+          </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Oxygen Support</label>
+            <select id="delivery_oxygen_support" class="w-full p-4 border rounded-2xl">
+              <option>On room air</option>
+              <option>With supplemental oxygen</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Abnormal Exam?</label>
+            <select id="delivery_abnormal_exam" class="w-full p-4 border rounded-2xl">
+              <option>No</option>
+              <option>Yes</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2">If abnormal, specify</label>
+          <input id="delivery_abnormal_specify" class="w-full p-4 border rounded-2xl" placeholder="Describe abnormality">
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-3">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Date of Delivery</label>
+            <input id="delivery_delivery_date" type="date" class="w-full p-4 border rounded-2xl">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Time of Delivery</label>
+            <input id="delivery_delivery_time" type="time" class="w-full p-4 border rounded-2xl">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Delivery Location</label>
+            <input id="delivery_location" class="w-full p-4 border rounded-2xl" placeholder="Hospital, home, other">
+          </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Who delivered child?</label>
+            <select id="delivery_provider" class="w-full p-4 border rounded-2xl">
+              <option>Doctor</option>
+              <option>Clinical Officer</option>
+              <option>Nurse</option>
+              <option>Midwife</option>
+              <option>Traditional Birth Attendant</option>
+              <option>Village Health Worker</option>
+              <option>Other</option>
+              <option>Don't know</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Mode of Delivery</label>
+            <select id="delivery_mode" class="w-full p-4 border rounded-2xl">
+              <option>Spontaneous vaginal delivery</option>
+              <option>Episiotomy</option>
+              <option>Vacuum</option>
+              <option>Forceps</option>
+              <option>C-section</option>
+              <option>Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2">C-section indication</label>
+          <input id="delivery_csection_indication" class="w-full p-4 border rounded-2xl" placeholder="If C-section">
+        </div>
+
+        <div class="flex justify-end">
+          <button type="submit" class="save-button bg-blue-900 hover:bg-blue-800 text-white px-8 py-4 rounded-2xl font-semibold">Save Delivery</button>
+        </div>
+        <p id="deliveryMessage" class="text-sm text-red-600"></p>
+      </form>
+    </div>
+  `;
+}
+
+function getCloseoutSection() {
+  return `
+    <div class="bg-white rounded-3xl shadow p-8">
+      <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+        <div>
+          <h2 class="text-2xl font-bold">Closeout Form</h2>
+          <p class="text-slate-500">Closeout can be completed for any Screening ID.</p>
+        </div>
+        <span id="saveNotice" class="text-sm text-slate-500"></span>
+      </div>
+      <form id="closeoutForm" onsubmit="submitCloseout(event)" class="space-y-6">
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Screening ID</label>
+            <select id="closeout_screening_id" onchange="autofillCloseoutFromSelectedScreening(); saveSelectedScreeningId(this.value);" class="w-full p-4 border rounded-2xl" required></select>
+            <p id="closeoutScreeningSummary" class="text-xs text-slate-500 mt-2">Select a Screening ID to show basic enrolment details.</p>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Date of Interview</label>
+            <input id="closeout_date" type="date" class="w-full p-4 border rounded-2xl" required>
+          </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-sm font-semibold mb-2">Date of Study Termination</label>
+            <input id="closeout_termination_date" type="date" class="w-full p-4 border rounded-2xl" required>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2">Participant Status</label>
+            <select id="closeout_status" class="w-full p-4 border rounded-2xl" required>
+              <option>Completed study visits</option>
+              <option>Participation terminated prior to completion</option>
+              <option>Screen failure before enrolment</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2">Reason for Discontinuation</label>
+          <textarea id="closeout_reason" rows="4" class="w-full p-4 border rounded-2xl" placeholder="Adverse event, death, lost to follow-up, withdrawal, etc."></textarea>
+        </div>
+
+        <div class="flex justify-end">
+          <button type="submit" class="save-button bg-blue-900 hover:bg-blue-800 text-white px-8 py-4 rounded-2xl font-semibold">Save Closeout</button>
+        </div>
+        <p id="closeoutMessage" class="text-sm text-red-600"></p>
+      </form>
+    </div>
+  `;
+}
+
+async function loadRecords() {
+  const response = await fetch('/api/screenings');
+  const data = await response.json();
+  const table = document.getElementById('recordsTable');
+  table.innerHTML = `
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-left text-sm border-separate border-spacing-0">
+        <thead class="bg-slate-100 text-slate-600 uppercase text-xs tracking-wider">
+          <tr>
+            <th class="py-3 px-3">Screening ID</th>
+            <th class="py-3 px-3">Facility</th>
+            <th class="py-3 px-3">DOB</th>
+            <th class="py-3 px-3">Eligibility</th>
+            <th class="py-3 px-3">Consent</th>
+          </tr>
+        </thead>
+        <tbody>${data.map(row => `
+          <tr class="border-b border-slate-200 hover:bg-slate-50">
+            <td class="py-3 px-3 font-medium">${row.screening_id}</td>
+            <td class="py-3 px-3">${row.facility || '-'}</td>
+            <td class="py-3 px-3">${row.dob || '-'}</td>
+            <td class="py-3 px-3">${row.eligibility || '-'}</td>
+            <td class="py-3 px-3">${row.consent || '-'}</td>
+          </tr>
+        `).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+async function refreshEligibleOptions() {
+  const response = await fetch('/api/eligible');
+  const ids = await response.json();
+  const select = document.getElementById('enrolment_screening_id');
+  if (!select) return;
+  if (!ids.length) {
+    select.innerHTML = '<option value="">No eligible Screening IDs available</option>';
+    const message = document.getElementById('enrolmentMessage');
+    if (message) {
+      message.textContent = 'No eligible screening records available. Complete screening with eligibility Yes and consent Yes first.';
+    }
+    return;
+  }
+  select.innerHTML = ids.map(id => `<option value="${id}">${id}</option>`).join('');
+}
+
+async function refreshEnrolledOptions() {
+  const response = await fetch('/api/enrolled');
+  const ids = await response.json();
+  const select = document.getElementById('delivery_screening_id');
+  if (!select) return;
+  select.innerHTML = ids.length ? ids.map(id => `<option value="${id}">${id}</option>`).join('') : '<option value="">No enrolled Screening IDs available</option>';
+}
+
+async function refreshAllScreeningOptions() {
+  const response = await fetch('/api/screenings');
+  const data = await response.json();
+  const select = document.getElementById('closeout_screening_id');
+  if (!select) return;
+  select.innerHTML = data.length ? data.map(row => `<option value="${row.screening_id}">${row.screening_id}</option>`).join('') : '<option value="">No Screening IDs available</option>';
+}
+
+function updateConsentReason() {
+  const consent = document.getElementById('screening_consent');
+  const reason = document.getElementById('screening_consent_reason');
+  if (consent && reason) {
+    reason.disabled = consent.value === 'Yes';
+    if (consent.value === 'Yes') {
+      reason.value = '';
+    }
+  }
+}
+
+async function submitScreening(event) {
+  event.preventDefault();
+  const message = document.getElementById('screeningMessage');
+  message.textContent = '';
+  const consent = document.getElementById('screening_consent').value;
+  const consentReason = document.getElementById('screening_consent_reason').value.trim();
+  if (consent === 'No' && !consentReason) {
+    message.textContent = 'Please provide the reason for refusal when consent is No.';
+    return;
+  }
+
+  const payload = {
+    screening_id: document.getElementById('screening_id').value.trim(),
+    date: formatDateInput(document.getElementById('screening_date').value),
+    facility: document.getElementById('screening_facility').value,
+    dob: formatDateInput(document.getElementById('screening_dob').value),
+    age_years: Number(document.getElementById('screening_age_years').value) || null,
+    age_months: Number(document.getElementById('screening_age_months').value) || null,
+    height: Number(document.getElementById('screening_height').value) || null,
+    weight: Number(document.getElementById('screening_weight').value) || null,
+    temperature: Number(document.getElementById('screening_temperature').value) || null,
+    temp_method: document.getElementById('screening_temp_method').value,
+    resp_rate: Number(document.getElementById('screening_resp_rate').value) || null,
+    pulse_rate: Number(document.getElementById('screening_pulse_rate').value) || null,
+    bp: document.getElementById('screening_bp').value,
+    lmp: document.getElementById('screening_lmp').value ? formatDateInput(document.getElementById('screening_lmp').value) : '',
+    fundal_height: Number(document.getElementById('screening_fundal_height').value) || null,
+    inc_resident: document.getElementById('screening_inc_0').value,
+    inc_pregnancy: document.getElementById('screening_inc_1').value,
+    inc_gestation: document.getElementById('screening_inc_2').value,
+    inc_hiv: document.getElementById('screening_inc_3').value,
+    inc_delivery: document.getElementById('screening_inc_4').value,
+    exc_multiple: document.getElementById('screening_exc_0').value,
+    exc_fistula: document.getElementById('screening_exc_1').value,
+    exc_mental: document.getElementById('screening_exc_2').value,
+    eligibility: document.getElementById('screening_eligibility').value,
+    consent,
+    consent_reason: consentReason
+  };
+
+  const response = await fetch('/api/screening', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  });
+  const result = await response.json();
+  if (!result.success) {
+    message.textContent = result.message || 'Failed to save screening';
+    return;
+  }
+  message.classList.remove('text-red-600');
+  message.classList.add('text-emerald-600');
+  message.textContent = 'Screening saved successfully.';
+  saveLastScreeningId(payload.screening_id);
+  loadDashboard();
+}
+
+async function submitEnrolment(event) {
+  event.preventDefault();
+  const message = document.getElementById('enrolmentMessage');
+  message.textContent = '';
+
+  const payload = {
+    screening_id: document.getElementById('enrolment_screening_id').value,
+    facility: document.getElementById('enrolment_facility').value,
+    dob: formatDateInput(document.getElementById('enrolment_dob').value),
+    age_years: Number(document.getElementById('enrolment_age_years').value) || null,
+    age_months: Number(document.getElementById('enrolment_age_months').value) || null,
+    marital_status: document.getElementById('enrolment_marital_status').value,
+    husband_name: document.getElementById('enrolment_husband_name').value,
+    village: document.getElementById('enrolment_village').value,
+    education: document.getElementById('enrolment_education').value,
+    occupation: document.getElementById('enrolment_occupation').value,
+    height: Number(document.getElementById('enrolment_height').value) || null,
+    weight: Number(document.getElementById('enrolment_weight').value) || null,
+    temperature: Number(document.getElementById('enrolment_temperature').value) || null,
+    temp_method: document.getElementById('enrolment_temp_method').value,
+    resp_rate: Number(document.getElementById('enrolment_resp_rate').value) || null,
+    pulse_rate: Number(document.getElementById('enrolment_pulse_rate').value) || null,
+    bp: document.getElementById('enrolment_bp').value,
+    estimated_ga: document.getElementById('enrolment_estimated_ga').value
+  };
+
+  const response = await fetch('/api/enrolment', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  });
+  const result = await response.json();
+  if (!result.success) {
+    message.textContent = result.message || 'Failed to save enrolment';
+    return;
+  }
+  clearFormDraft('enrolment', document.getElementById('enrolment_screening_id')?.value || 'none');
+  message.classList.remove('text-red-600');
+  message.classList.add('text-emerald-600');
+  message.textContent = 'Enrolment record saved successfully.';
+  loadDashboard();
+}
+
+async function submitDelivery(event) {
+  event.preventDefault();
+  const message = document.getElementById('deliveryMessage');
+  message.textContent = '';
+
+  const payload = {
+    screening_id: document.getElementById('delivery_screening_id').value,
+    date: formatDateInput(document.getElementById('delivery_date').value),
+    mother_weight: Number(document.getElementById('delivery_mother_weight').value) || null,
+    bmi: document.getElementById('delivery_bmi_unknown').checked ? 'Unknown' : document.getElementById('delivery_bmi').value || '',
+    bmi_unknown: document.getElementById('delivery_bmi_unknown').checked ? 'Yes' : 'No',
+    temperature: Number(document.getElementById('delivery_temperature').value) || null,
+    temp_method: document.getElementById('delivery_temp_method').value,
+    resp_rate: Number(document.getElementById('delivery_resp_rate').value) || null,
+    pulse_rate: Number(document.getElementById('delivery_pulse_rate').value) || null,
+    bp: document.getElementById('delivery_bp').value,
+    oxygen_saturation: Number(document.getElementById('delivery_oxygen_saturation').value) || null,
+    oxygen_support: document.getElementById('delivery_oxygen_support').value,
+    abnormal_exam: document.getElementById('delivery_abnormal_exam').value,
+    abnormal_specify: document.getElementById('delivery_abnormal_specify').value,
+    delivery_date: formatDateInput(document.getElementById('delivery_delivery_date').value),
+    delivery_time: document.getElementById('delivery_delivery_time').value,
+    delivery_location: document.getElementById('delivery_location').value,
+    delivery_location_other: document.getElementById('delivery_location_other').value,
+    delivery_provider: document.getElementById('delivery_provider').value,
+    delivery_provider_other: document.getElementById('delivery_provider_other').value,
+    mode: document.getElementById('delivery_mode').value,
+    csection_indication: document.getElementById('delivery_csection_indication').value,
+    csection_indication_other: document.getElementById('delivery_csection_indication_other').value
+  };
+
+  if (!payload.screening_id) {
+    message.textContent = 'Please select an enrolled Screening ID before saving delivery.';
+    return;
+  }
+  if (!payload.delivery_location) {
+    message.textContent = 'Please select the delivery location.';
+    return;
+  }
+  if (['Other hospital/clinic', 'Other location'].includes(payload.delivery_location) && !payload.delivery_location_other.trim()) {
+    message.textContent = 'Please provide the other delivery location details.';
+    return;
+  }
+  if (!payload.delivery_provider) {
+    message.textContent = 'Please select who delivered the child.';
+    return;
+  }
+  if (payload.delivery_provider === 'Other' && !payload.delivery_provider_other.trim()) {
+    message.textContent = 'Please specify the other delivery provider.';
+    return;
+  }
+  if (!payload.mode) {
+    message.textContent = 'Please select the mode of delivery.';
+    return;
+  }
+  if (payload.mode === 'C-section' && !payload.csection_indication) {
+    message.textContent = 'Please select the C-section indication.';
+    return;
+  }
+  if (payload.mode === 'C-section' && payload.csection_indication === 'Other' && !payload.csection_indication_other.trim()) {
+    message.textContent = 'Please specify the other C-section indication.';
+    return;
+  }
+  if (payload.abnormal_exam === 'Yes' && !payload.abnormal_specify.trim()) {
+    message.textContent = 'Please specify the abnormal exam findings.';
+    return;
+  }
+
+  const response = await fetch('/api/delivery', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  });
+  const result = await response.json();
+  if (!result.success) {
+    message.textContent = result.message || 'Failed to save delivery';
+    return;
+  }
+  clearFormDraft('delivery', document.getElementById('delivery_screening_id')?.value || 'none');
+  message.classList.remove('text-red-600');
+  message.classList.add('text-emerald-600');
+  message.textContent = 'Delivery record saved successfully.';
+  loadDashboard();
+}
+
+async function submitCloseout(event) {
+  event.preventDefault();
+  const message = document.getElementById('closeoutMessage');
+  message.textContent = '';
+
+  const payload = {
+    screening_id: document.getElementById('closeout_screening_id').value,
+    date: formatDateInput(document.getElementById('closeout_date').value),
+    termination_date: formatDateInput(document.getElementById('closeout_termination_date').value),
+    status: document.getElementById('closeout_status').value,
+    reason: document.getElementById('closeout_reason').value
+  };
+
+  const response = await fetch('/api/closeout', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  });
+  const result = await response.json();
+  if (!result.success) {
+    message.textContent = result.message || 'Failed to save closeout';
+    return;
+  }
+  clearFormDraft('closeout', document.getElementById('closeout_screening_id')?.value || 'none');
+  message.classList.remove('text-red-600');
+  message.classList.add('text-emerald-600');
+  message.textContent = 'Closeout record saved successfully.';
+  loadDashboard();
+}
+
+// Initialize
+showAuthTab('login');
+</script>
+</body>
+</html>

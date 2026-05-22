@@ -116,14 +116,16 @@
       </div>
     </section>
 
-    <section class="grid grid-cols-1 gap-4 lg:grid-cols-4 mb-8">
+    <section class="grid grid-cols-1 gap-4 lg:grid-cols-5 mb-8">
       <button onclick="loadSection('dashboard')" class="bg-white p-6 rounded-3xl shadow hover:shadow-lg text-left">Dashboard</button>
       <button onclick="loadSection('screening')" class="bg-white p-6 rounded-3xl shadow hover:shadow-lg text-left">Screening</button>
       <button onclick="loadSection('enrolment')" class="bg-white p-6 rounded-3xl shadow hover:shadow-lg text-left">Enrolment</button>
       <button onclick="loadSection('delivery')" class="bg-white p-6 rounded-3xl shadow hover:shadow-lg text-left">Delivery</button>
       <button onclick="loadSection('closeout')" class="bg-white p-6 rounded-3xl shadow hover:shadow-lg text-left">Closeout</button>
-      <button onclick="loadSection('records')" class="bg-white p-6 rounded-3xl shadow hover:shadow-lg text-left">Records</button>
+      <button onclick="loadSection('edit-records')" class="bg-white p-6 rounded-3xl shadow hover:shadow-lg text-left">Edit Records</button>
+      <button onclick="loadSection('records')" class="bg-white p-6 rounded-3xl shadow hover:shadow-lg text-left">View Records</button>
       <button id="adminPageButton" onclick="loadSection('admin')" class="hidden bg-white p-6 rounded-3xl shadow hover:shadow-lg text-left">User Admin</button>
+      <button id="managerPageButton" onclick="loadSection('manager-panel')" class="hidden bg-white p-6 rounded-3xl shadow hover:shadow-lg text-left">Manager Panel</button>
     </section>
 
     <section id="contentArea"></section>
@@ -253,6 +255,7 @@ function showMainApp(user) {
   document.getElementById('mainApp').classList.remove('hidden');
   document.getElementById('userBadge').textContent = `${user.initials} • ${user.role}`;
   document.getElementById('adminPageButton').classList.toggle('hidden', user.role !== 'Data Manager');
+  document.getElementById('managerPageButton').classList.toggle('hidden', user.role !== 'Data Manager');
   currentUser.role = user.role;
   currentUser.initials = user.initials;
   currentUser.username = user.username;
@@ -924,6 +927,15 @@ async function loadSection(section) {
       area.innerHTML = getAdminSection();
       await loadAdminUsers();
       await loadAdminScreenings();
+      break;
+
+    case 'edit-records':
+      area.innerHTML = getEditRecordsSection();
+      await loadEditRecords();
+      break;
+
+    case 'manager-panel':
+      area.innerHTML = getManagerPanelSection();
       break;
 
     default:
@@ -2021,6 +2033,240 @@ async function submitCloseout(event) {
   message.classList.add('text-emerald-600');
   message.textContent = 'Closeout record saved successfully.';
   loadDashboard();
+}
+
+function getEditRecordsSection() {
+  return `
+  <div class="bg-white rounded-3xl shadow p-8">
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+      <div>
+        <h2 class="text-2xl font-bold">Edit Existing Records</h2>
+        <p class="text-slate-500">Click on a record to view and edit its data.</p>
+      </div>
+    </div>
+    <div id="editRecordsTable"></div>
+  </div>`;
+}
+
+async function loadEditRecords() {
+  const response = await fetch('/api/screenings');
+  const data = await response.json();
+  const table = document.getElementById('editRecordsTable');
+  
+  if (!data.length) {
+    table.innerHTML = '<p class="text-slate-500">No screening records found.</p>';
+    return;
+  }
+
+  const rows = await Promise.all(data.map(async (row) => {
+    const statusResp = await fetch(`/api/record-status/${row.screening_id}`);
+    const status = await statusResp.json();
+    
+    const forms = [];
+    if (status.has_screening) forms.push('Screening');
+    if (status.has_enrolment) forms.push('Enrolment');
+    if (status.has_delivery) forms.push('Delivery');
+    if (status.has_closeout) forms.push('Closeout');
+    
+    return `
+      <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-4 hover:bg-slate-100 cursor-pointer" onclick="selectRecordToEdit('${row.screening_id}')">
+        <div class="flex justify-between items-start">
+          <div>
+            <h3 class="text-lg font-semibold text-blue-900">${row.screening_id}</h3>
+            <p class="text-sm text-slate-600">Facility: ${row.facility || '-'} | DOB: ${row.dob || '-'}</p>
+            <p class="text-sm text-slate-500">Forms completed: ${forms.length > 0 ? forms.join(', ') : 'None'}</p>
+          </div>
+          <div class="text-right">
+            <span class="inline-block ${row.eligibility === 'Yes' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-800'} px-3 py-1 rounded-full text-sm font-semibold">
+              ${row.eligibility === 'Yes' && row.consent === 'Yes' ? 'Eligible' : 'Screening'}
+            </span>
+          </div>
+        </div>
+      </div>`;
+  }));
+
+  table.innerHTML = `<div class="overflow-y-auto max-h-96">${rows.join('')}</div>`;
+}
+
+async function selectRecordToEdit(screeningId) {
+  const status = await fetch(`/api/record-status/${screeningId}`).then(r => r.json());
+  
+  if (status.has_screening) {
+    const data = await fetch(`/api/screening/${screeningId}/edit`).then(r => r.json());
+    loadSection('screening');
+    setTimeout(() => populateScreeningForm(data, screeningId), 100);
+  } else if (status.has_enrolment) {
+    const data = await fetch(`/api/enrolment/${screeningId}/edit`).then(r => r.json());
+    loadSection('enrolment');
+    setTimeout(() => populateEnrolmentForm(data, screeningId), 100);
+  } else if (status.has_delivery) {
+    const data = await fetch(`/api/delivery/${screeningId}/edit`).then(r => r.json());
+    loadSection('delivery');
+    setTimeout(() => populateDeliveryForm(data, screeningId), 100);
+  } else if (status.has_closeout) {
+    const data = await fetch(`/api/closeout/${screeningId}/edit`).then(r => r.json());
+    loadSection('closeout');
+    setTimeout(() => populateCloseoutForm(data, screeningId), 100);
+  }
+}
+
+function populateScreeningForm(data, screeningId) {
+  document.getElementById('screening_id').value = data.screening_id || screeningId;
+  document.getElementById('screening_date').value = data.date || '';
+  document.getElementById('screening_facility').value = data.facility || '';
+  document.getElementById('screening_dob').value = data.dob || '';
+  document.getElementById('screening_age_years').value = data.age_years || '';
+  document.getElementById('screening_age_months').value = data.age_months || '';
+  document.getElementById('screening_height').value = data.height || '';
+  document.getElementById('screening_weight').value = data.weight || '';
+  document.getElementById('screening_temperature').value = data.temperature || '';
+  document.getElementById('screening_temp_method').value = data.temp_method || 'Axillary';
+  document.getElementById('screening_resp_rate').value = data.resp_rate || '';
+  document.getElementById('screening_pulse_rate').value = data.pulse_rate || '';
+  document.getElementById('screening_bp').value = data.bp || '';
+  document.getElementById('screening_lmp').value = data.lmp || '';
+  document.getElementById('screening_fundal_height').value = data.fundal_height || '';
+  document.getElementById('screening_inc_0').value = data.inc_resident || 'Yes';
+  document.getElementById('screening_inc_1').value = data.inc_pregnancy || 'Yes';
+  document.getElementById('screening_inc_2').value = data.inc_gestation || 'Yes';
+  document.getElementById('screening_inc_3').value = data.inc_hiv || 'Yes';
+  document.getElementById('screening_inc_4').value = data.inc_delivery || 'Yes';
+  document.getElementById('screening_exc_0').value = data.exc_multiple || 'No';
+  document.getElementById('screening_exc_1').value = data.exc_fistula || 'No';
+  document.getElementById('screening_exc_2').value = data.exc_mental || 'No';
+  document.getElementById('screening_eligibility').value = data.eligibility || 'Yes';
+  document.getElementById('screening_consent').value = data.consent || 'Yes';
+  document.getElementById('screening_consent_reason').value = data.consent_reason || '';
+  updateConsentReason();
+}
+
+function populateEnrolmentForm(data, screeningId) {
+  document.getElementById('enrolment_screening_id').value = screeningId;
+  document.getElementById('enrolment_facility').value = data.facility || '';
+  document.getElementById('enrolment_dob').value = data.dob || '';
+  document.getElementById('enrolment_age_years').value = data.age_years || '';
+  document.getElementById('enrolment_age_months').value = data.age_months || '';
+  document.getElementById('enrolment_marital_status').value = data.marital_status || '';
+  document.getElementById('enrolment_husband_name').value = data.husband_name || '';
+  document.getElementById('enrolment_village').value = data.village || '';
+  document.getElementById('enrolment_education').value = data.education || '';
+  document.getElementById('enrolment_occupation').value = data.occupation || '';
+  document.getElementById('enrolment_height').value = data.height || '';
+  document.getElementById('enrolment_weight').value = data.weight || '';
+  document.getElementById('enrolment_temperature').value = data.temperature || '';
+  document.getElementById('enrolment_temp_method').value = data.temp_method || 'Axillary';
+  document.getElementById('enrolment_resp_rate').value = data.resp_rate || '';
+  document.getElementById('enrolment_pulse_rate').value = data.pulse_rate || '';
+  document.getElementById('enrolment_bp').value = data.bp || '';
+  document.getElementById('enrolment_estimated_ga').value = data.estimated_ga || '';
+}
+
+function populateDeliveryForm(data, screeningId) {
+  document.getElementById('delivery_screening_id').value = screeningId;
+  document.getElementById('delivery_date').value = data.date || '';
+  document.getElementById('delivery_mother_weight').value = data.mother_weight || '';
+  document.getElementById('delivery_bmi').value = data.bmi || '';
+  document.getElementById('delivery_bmi_unknown').checked = data.bmi_unknown === 'Yes';
+  document.getElementById('delivery_temperature').value = data.temperature || '';
+  document.getElementById('delivery_temp_method').value = data.temp_method || 'Axillary';
+  document.getElementById('delivery_resp_rate').value = data.resp_rate || '';
+  document.getElementById('delivery_pulse_rate').value = data.pulse_rate || '';
+  document.getElementById('delivery_bp').value = data.bp || '';
+  document.getElementById('delivery_oxygen_saturation').value = data.oxygen_saturation || '';
+  document.getElementById('delivery_oxygen_support').value = data.oxygen_support || '';
+  document.getElementById('delivery_abnormal_exam').value = data.abnormal_exam || '';
+  document.getElementById('delivery_abnormal_specify').value = data.abnormal_specify || '';
+  document.getElementById('delivery_date_of_delivery').value = data.delivery_date || '';
+  document.getElementById('delivery_time_of_delivery').value = data.delivery_time || '';
+  document.getElementById('delivery_location').value = data.delivery_location || '';
+  document.getElementById('delivery_location_other').value = data.delivery_location_other || '';
+  document.getElementById('delivery_provider').value = data.delivery_provider || '';
+  document.getElementById('delivery_provider_other').value = data.delivery_provider_other || '';
+  document.getElementById('delivery_mode').value = data.mode || '';
+  document.getElementById('delivery_csection_indication').value = data.csection_indication || '';
+  document.getElementById('delivery_csection_indication_other').value = data.csection_indication_other || '';
+}
+
+function populateCloseoutForm(data, screeningId) {
+  document.getElementById('closeout_screening_id').value = screeningId;
+  document.getElementById('closeout_date').value = data.date || '';
+  document.getElementById('closeout_termination_date').value = data.termination_date || '';
+  document.getElementById('closeout_status').value = data.status || '';
+  document.getElementById('closeout_reason').value = data.reason || '';
+}
+
+function getManagerPanelSection() {
+  return `
+  <div class="bg-white rounded-3xl shadow p-8">
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+      <div>
+        <h2 class="text-2xl font-bold">Manager Panel</h2>
+        <p class="text-slate-500">Create new Data Manager accounts from this secure panel.</p>
+      </div>
+    </div>
+
+    <div class="bg-blue-50 border border-blue-200 rounded-3xl p-6 mb-6">
+      <h3 class="text-lg font-semibold text-blue-900 mb-4"><i class="fas fa-shield-alt"></i> Create New Data Manager</h3>
+      <form onsubmit="createNewManager(event)" class="space-y-4">
+        <div class="grid gap-4 md:grid-cols-3">
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Full Name</label>
+            <input id="new_manager_name" class="w-full p-4 border rounded-2xl" placeholder="Full Name" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Username</label>
+            <input id="new_manager_username" class="w-full p-4 border rounded-2xl" placeholder="Username (min 3 chars)" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Temporary Password</label>
+            <input id="new_manager_password" type="password" class="w-full p-4 border rounded-2xl" placeholder="Min 8 characters" required>
+          </div>
+        </div>
+        <div class="flex justify-end">
+          <button type="submit" class="bg-blue-900 hover:bg-blue-800 text-white px-8 py-4 rounded-2xl font-semibold">Create Manager</button>
+        </div>
+        <p id="managerMessage" class="text-sm text-red-600"></p>
+      </form>
+    </div>
+  </div>`;
+}
+
+async function createNewManager(event) {
+  event.preventDefault();
+  const msg = document.getElementById('managerMessage');
+  msg.textContent = '';
+  msg.className = 'text-sm text-red-600';
+
+  const fullName = document.getElementById('new_manager_name').value.trim();
+  const username = document.getElementById('new_manager_username').value.trim();
+  const password = document.getElementById('new_manager_password').value;
+
+  if (username.length < 3) {
+    msg.textContent = 'Username must be at least 3 characters';
+    return;
+  }
+  if (password.length < 8) {
+    msg.textContent = 'Password must be at least 8 characters';
+    return;
+  }
+
+  const response = await fetch('/api/managers/create', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({full_name: fullName, username: username, password: password})
+  });
+  const result = await response.json();
+
+  if (!result.success) {
+    msg.textContent = result.message || 'Failed to create manager';
+    return;
+  }
+
+  msg.className = 'text-sm text-emerald-600';
+  msg.textContent = result.message || 'Data Manager created successfully';
+  document.getElementById('new_manager_name').value = '';
+  document.getElementById('new_manager_username').value = '';
+  document.getElementById('new_manager_password').value = '';
 }
 
 // Initialize

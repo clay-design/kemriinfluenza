@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, render_template, session
 import sqlite3
 import json
+import uuid
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -8,6 +9,18 @@ app = Flask(__name__)
 app.secret_key = 'kemri_cghr_influenza_2026_strong_secret'
 DB_PATH = 'kemri_influenza.db'
 FACILITIES = ['Bondo', 'Siaya', 'Kuoyo', 'Lumumba']
+
+# Security: CSRF token generation
+def generate_csrf_token():
+    if '_csrf_token' not in session:
+        session['_csrf_token'] = str(uuid.uuid4())
+    return session['_csrf_token']
+
+def validate_csrf_token():
+    token = request.headers.get('X-CSRF-Token') or request.form.get('_csrf_token')
+    if not token or token != session.get('_csrf_token'):
+        return False
+    return True
 
 
 def get_db():
@@ -215,7 +228,14 @@ init_db()
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    csrf_token = generate_csrf_token()
+    return render_template('index.html', csrf_token=csrf_token)
+
+
+@app.route('/api/csrf-token')
+def get_csrf_token():
+    token = generate_csrf_token()
+    return jsonify({'csrf_token': token})
 
 
 def require_login():
@@ -300,6 +320,46 @@ def register():
         return jsonify({'success': False, 'message': 'Username already exists'}), 409
     conn.close()
     return jsonify({'success': True, 'message': 'Account created successfully'})
+
+
+@app.route('/api/managers/create', methods=['POST'])
+def create_manager_account():
+    """Only authenticated Data Managers can create new Data Manager accounts."""
+    auth = require_login()
+    if auth:
+        return auth
+    authz = require_manager()
+    if authz:
+        return authz
+
+    data = request.get_json() or {}
+    if not data.get('username') or not data.get('password') or not data.get('full_name'):
+        return jsonify({'success': False, 'message': 'username, password and full_name are required'}), 400
+
+    username = data['username'].strip()
+    full_name = data['full_name'].strip()
+    
+    if len(username) < 3:
+        return jsonify({'success': False, 'message': 'Username must be at least 3 characters'}), 400
+    if len(data['password']) < 8:
+        return jsonify({'success': False, 'message': 'Password must be at least 8 characters'}), 400
+
+    conn = get_db()
+    c = conn.cursor()
+    
+    password_hash = generate_password_hash(data['password'])
+    initials = get_initials(full_name)
+
+    try:
+        c.execute('INSERT INTO users (username, password_hash, full_name, initials, role, created_at) VALUES (?,?,?,?,?,?)',
+                  (username, password_hash, full_name, initials, 'Data Manager', datetime.now().isoformat()))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        conn.close()
+        return jsonify({'success': False, 'message': 'Username already exists'}), 409
+    
+    conn.close()
+    return jsonify({'success': True, 'message': f'Data Manager {full_name} created successfully'})
 
 
 @app.route('/api/reset-password', methods=['POST'])
@@ -819,6 +879,113 @@ def stats():
         'closed': closed,
         'sites': sites
     })
+
+
+@app.route('/api/record-status/<screening_id>')
+def get_record_status(screening_id):
+    """Get completion status of all forms for a screening record."""
+    auth = require_login()
+    if auth:
+        return auth
+
+    conn = get_db()
+    c = conn.cursor()
+    
+    # Check which forms exist for this screening
+    c.execute('SELECT COUNT(*) as count FROM screening WHERE screening_id=?', (screening_id,))
+    has_screening = c.fetchone()['count'] > 0
+    
+    c.execute('SELECT COUNT(*) as count FROM enrolment WHERE screening_id=?', (screening_id,))
+    has_enrolment = c.fetchone()['count'] > 0
+    
+    c.execute('SELECT COUNT(*) as count FROM delivery WHERE screening_id=?', (screening_id,))
+    has_delivery = c.fetchone()['count'] > 0
+    
+    c.execute('SELECT COUNT(*) as count FROM closeout WHERE screening_id=?', (screening_id,))
+    has_closeout = c.fetchone()['count'] > 0
+    
+    # Get screening eligibility/consent status
+    c.execute('SELECT eligibility, consent FROM screening WHERE screening_id=?', (screening_id,))
+    screening = c.fetchone()
+    conn.close()
+    
+    return jsonify({
+        'screening_id': screening_id,
+        'has_screening': has_screening,
+        'has_enrolment': has_enrolment,
+        'has_delivery': has_delivery,
+        'has_closeout': has_closeout,
+        'eligible': screening['eligibility'] == 'Yes' if screening else False,
+        'consented': screening['consent'] == 'Yes' if screening else False
+    })
+
+
+@app.route('/api/screening/<screening_id>/edit')
+def get_screening_for_edit(screening_id):
+    """Get screening data for editing."""
+    auth = require_login()
+    if auth:
+        return auth
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('SELECT * FROM screening WHERE screening_id=?', (screening_id,))
+    row = c.fetchone()
+    conn.close()
+    if not row:
+        return jsonify({'success': False, 'message': 'Screening not found'}), 404
+    return jsonify(dict(row))
+
+
+@app.route('/api/enrolment/<screening_id>/edit')
+def get_enrolment_for_edit(screening_id):
+    """Get enrolment data for editing."""
+    auth = require_login()
+    if auth:
+        return auth
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('SELECT * FROM enrolment WHERE screening_id=?', (screening_id,))
+    row = c.fetchone()
+    conn.close()
+    if not row:
+        return jsonify({})
+    return jsonify(dict(row))
+
+
+@app.route('/api/delivery/<screening_id>/edit')
+def get_delivery_for_edit(screening_id):
+    """Get delivery data for editing."""
+    auth = require_login()
+    if auth:
+        return auth
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('SELECT * FROM delivery WHERE screening_id=?', (screening_id,))
+    row = c.fetchone()
+    conn.close()
+    if not row:
+        return jsonify({})
+    return jsonify(dict(row))
+
+
+@app.route('/api/closeout/<screening_id>/edit')
+def get_closeout_for_edit(screening_id):
+    """Get closeout data for editing."""
+    auth = require_login()
+    if auth:
+        return auth
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('SELECT * FROM closeout WHERE screening_id=?', (screening_id,))
+    row = c.fetchone()
+    conn.close()
+    if not row:
+        return jsonify({})
+    return jsonify(dict(row))
 
 
 if __name__ == '__main__':
